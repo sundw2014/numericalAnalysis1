@@ -3,47 +3,20 @@
 #include <iostream>
 #include "imageprocess.h"
 #include "blas.h"
+#include "cvutilities.h"
 
 using namespace cv;
 using namespace std;
 
-void cvMat2IMG_RGB(const Mat& m, IMG_RGB& i);
-void IMG_RGB2cvMat(const IMG_RGB& i, Mat& m);
-string type2str(int type);
+// Mouse events
+void onMouse(int event, int x, int y, int flags, void* param);
+
+// TPS vars
+static int TPSstate=0;
+ControlPoints controlPs;
 
 int main( int argc, char** argv )
 {
-    // double A[1][4]={{1,2,3,4}}, B[4][1]={{5},{6},{7},{8}}, AB[1][1];
-    // mul_MM<double,1,4,1>(A,B,AB);
-    // printf("%lf\r\n",AB[0][0]);
-    // double A[4][4]={{1,35,23,4},{15,6,7,8},{9,1,11,12},{13,0,20,16}}, Ainverse[4][4];
-    // Array2D<double> A(4,4), Ainverse(4,4);
-    // A[0][0]=1;
-    // A[0][1]=35;
-    // A[0][2]=23;
-    // A[0][3]=4;
-    // A[1][0]=15;
-    // A[1][1]=6;
-    // A[1][2]=7;
-    // A[1][3]=8;
-    // A[2][0]=9;
-    // A[2][1]=1;
-    // A[2][2]=11;
-    // A[2][3]=12;
-    // A[3][0]=13;
-    // A[3][1]=0;
-    // A[3][2]=20;
-    // A[3][3]=16;
-    //
-    // inverseSquareM<double>(A, Ainverse);
-    // A.print();
-    // Ainverse.print();
-    // for(int i=0;i<4;i++){
-    //   for(int j=0;j<4;j++){
-    //     printf("%lf,",Ainverse[i][j]);
-    //   }
-    //   printf("\r\n");
-    // }
     if( argc != 2)
     {
      cout <<" Usage: display_image ImageToProcessAndDisplay" << endl;
@@ -51,89 +24,133 @@ int main( int argc, char** argv )
     }
 
     Mat rawImage;
-    rawImage = imread(argv[1], CV_LOAD_IMAGE_COLOR);   // Read the file
-    size_t rawSize[2] = {rawImage.rows, rawImage.cols};
-    Mat processedImage(rawSize[0], rawSize[1], rawImage.type());
+    rawImage = imread(argv[1], CV_LOAD_IMAGE_COLOR);   // Read the raw image
 
-    IMG_RGB processed_IMG_RGB(rawSize), raw_IMG_RGB(rawSize);
-    cvMat2IMG_RGB(rawImage,raw_IMG_RGB);
-    // twist(raw_IMG_RGB, processed_IMG_RGB, (double)90/180*PI, 250, biCubicRGB);
-    // double k[3]={0.5, 0.5, 0.5};
-    // distort(raw_IMG_RGB, processed_IMG_RGB, k, biCubicRGB);
-
-    ControlPoints control;
-    control.source.push_back(mPoint({0,0}));
-    control.source.push_back(mPoint({101,101}));
-    control.source.push_back(mPoint({250,350}));
-    control.target.push_back(mPoint({10,10}));
-    control.target.push_back(mPoint({140,140}));
-    control.target.push_back(mPoint({400,500}));
-
-    TPSdist(raw_IMG_RGB, processed_IMG_RGB, control, biCubicRGB);
-
-    IMG_RGB2cvMat(processed_IMG_RGB, processedImage);
-    //IMG_RGB2cvMat(raw_IMG_RGB, processedImage);
-
-    if(! rawImage.data )                              // Check for invalid input
+    if(!rawImage.data )                              // Check for invalid input
     {
         cout <<  "Could not open the image: " << argv[1] << std::endl ;
         return -1;
     }
 
-    // string ty =  type2str( rawImage.type() );
-    // printf("Matrix: %s %dx%d \n", ty.c_str(), rawImage.cols, rawImage.rows );
+    size_t rawSize[2] = {rawImage.rows, rawImage.cols};
 
-    namedWindow( "raw image Display window", WINDOW_AUTOSIZE );// Create a window for display.
-    namedWindow( "processed image Display window", WINDOW_AUTOSIZE );// Create a window for display.
-    imshow( "raw image Display window", rawImage );                   // Show our image inside it.
-    imshow( "processed image Display window", processedImage );
+    Mat processedImage(rawSize[0], rawSize[1], rawImage.type());
 
-    waitKey(0);                                          // Wait for a keystroke in the window
-    return 0;
-}
+    IMG_RGB processed_IMG_RGB(rawSize), raw_IMG_RGB(rawSize);
+    cvMat2IMG_RGB(rawImage,raw_IMG_RGB);
 
-string type2str(int type) {
-  string r;
+    char key;
+    cout<<"select mode:\r\n0. twist image\r\n1. distort an image\r\n2.apply TPS on an image\r\n";
+    cin>>key;
+    switch(key)
+    {
+      case '0':
+      {
+        double theta=0.0;
+        cout<<"input angle:\r\n";
+        cin>>theta;
+        cout<<"\r\ntheta="<<theta<<"\r\n";
+        int row = (int)((min(rawSize[0], rawSize[1])-1)/2);
+        cout<<"row="<<row<<"\r\n";
+        twist(raw_IMG_RGB, processed_IMG_RGB, theta/180.0*PI, row, biCubicRGB);
+        break;
+      }
+      case '1':
+      {
+        double k[3]={0.5, 0.5, 0.5};
+        cout<<"input 3 k-parameters:(like 0.5 0.5 0.5)\r\n";
+        cin>>k[0]>>k[1]>>k[2];
+        distort(raw_IMG_RGB, processed_IMG_RGB, k, biCubicRGB);
+        break;
+      }
+      case '2':
+      {
+        bool startRender=false;
+        namedWindow( "raw image Display window", WINDOW_AUTOSIZE );// Create a window for display.
+        setMouseCallback("raw image Display window",onMouse,reinterpret_cast<void*> (&rawImage));
 
-  uchar depth = type & CV_MAT_DEPTH_MASK;
-  uchar chans = 1 + (type >> CV_CN_SHIFT);
+        while(1){
+          Mat TPSSelectingImage = rawImage.clone();
 
-  switch ( depth ) {
-    case CV_8U:  r = "8U"; break;
-    case CV_8S:  r = "8S"; break;
-    case CV_16U: r = "16U"; break;
-    case CV_16S: r = "16S"; break;
-    case CV_32S: r = "32S"; break;
-    case CV_32F: r = "32F"; break;
-    case CV_64F: r = "64F"; break;
-    default:     r = "User"; break;
-  }
+          for(int i=0;i<min(controlPs.target.size(), controlPs.source.size());i++){
+            circle( TPSSelectingImage, Point( controlPs.source[i].x, controlPs.source[i].y ), 3.0, Scalar( 0, 0, 255 ), 1, 8 );
+            circle( TPSSelectingImage, Point( controlPs.target[i].x, controlPs.target[i].y ), 3.0, Scalar( 0, 0, 255 ), 1, 8 );
+            line(TPSSelectingImage, Point( controlPs.source[i].x, controlPs.source[i].y ), Point( controlPs.target[i].x, controlPs.target[i].y), Scalar( 110, 220, 0 ),  2, 8 );
+          }
+          if(controlPs.source.size()>controlPs.target.size())
+          {
+            int i = controlPs.source.size()-1;
+            circle( TPSSelectingImage, Point( controlPs.source[i].x, controlPs.source[i].y ), 3.0, Scalar( 0, 0, 255 ), 1, 8 );
+          }
 
-  r += "C";
-  r += (chans+'0');
+          imshow( "raw image Display window", TPSSelectingImage );                   // Show our image inside it.
 
-  return r;
-}
+          char TPSKey = waitKey(10);                                          // Wait for a keystroke in the window
+          switch(TPSKey)
+          {
+            case 'd':
+              switch(TPSstate){
+                case 0://去除一个target
+                  if(controlPs.target.size()>0){
+                    controlPs.target.pop_back();
+                  }
+                  TPSstate = 1;
+                  break;
+                case 1://去除一个source
+                  if(controlPs.source.size()>0){
+                    controlPs.source.pop_back();
+                  }
+                  TPSstate = 0;
+                  break;
+              }
+              break;
 
-void IMG_RGB2cvMat(const IMG_RGB& i, Mat& m){
-  assert(m.rows == i.size[0] && m.cols == i.size[1]);
+            case '\n':
+              if(TPSstate == 0){
+                startRender = true;
+              }
+              break;
 
-  for(int p=0;p<i.size[0];p++){
-    for(int q=0;q<i.size[1];q++){
-      m.at<Vec3b>(p,q) = Vec3b(i.data[p][q].data[0], i.data[p][q].data[1], i.data[p][q].data[2]);
-    }
-  }
-}
-
-void cvMat2IMG_RGB(const Mat& m, IMG_RGB& i)
-{
-  assert(m.rows == i.size[0] && m.cols == i.size[1]);
-
-  for(int p=0;p<i.size[0];p++){
-    for(int q=0;q<i.size[1];q++){
-      for(int c=0;c<3;c++){
-        i.data[p][q].data[c] = m.at<Vec3b>(p,q).val[c];
+            default:
+              break;
+          }
+          if(startRender)
+          {
+            break;
+          }
+        }
+        TPSdist(raw_IMG_RGB, processed_IMG_RGB, controlPs, biCubicRGB);
       }
     }
-  }
+
+    IMG_RGB2cvMat(processed_IMG_RGB, processedImage);
+    namedWindow( "processed image Display window", WINDOW_AUTOSIZE );// Create a window for display.
+
+
+    imshow( "processed image Display window", processedImage);
+    waitKey(0);
+
+  return 0;
+}
+
+void onMouse(int event, int x, int y, int flags, void* param)
+{
+    Mat *im = reinterpret_cast<Mat*>(param);
+    switch (event)
+    {
+        case CV_EVENT_LBUTTONDOWN:     //鼠标左键按下响应：返回坐标和灰度
+            switch(TPSstate){
+              case 0://添加source
+                controlPs.source.push_back(mPoint({x,y}));
+                TPSstate = 1;
+                break;
+              case 1://添加target
+                controlPs.target.push_back(mPoint({x,y}));
+                TPSstate = 0;
+                break;
+            }
+            break;
+        default:
+            break;
+    }
 }
