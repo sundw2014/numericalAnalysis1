@@ -17,7 +17,27 @@ int main( int argc, char** argv )
     // mul_MM<double,1,4,1>(A,B,AB);
     // printf("%lf\r\n",AB[0][0]);
     // double A[4][4]={{1,35,23,4},{15,6,7,8},{9,1,11,12},{13,0,20,16}}, Ainverse[4][4];
-    // inverseSquareM<double, 4>(A, Ainverse);
+    // Array2D<double> A(4,4), Ainverse(4,4);
+    // A[0][0]=1;
+    // A[0][1]=35;
+    // A[0][2]=23;
+    // A[0][3]=4;
+    // A[1][0]=15;
+    // A[1][1]=6;
+    // A[1][2]=7;
+    // A[1][3]=8;
+    // A[2][0]=9;
+    // A[2][1]=1;
+    // A[2][2]=11;
+    // A[2][3]=12;
+    // A[3][0]=13;
+    // A[3][1]=0;
+    // A[3][2]=20;
+    // A[3][3]=16;
+    //
+    // inverseSquareM<double>(A, Ainverse);
+    // A.print();
+    // Ainverse.print();
     // for(int i=0;i<4;i++){
     //   for(int j=0;j<4;j++){
     //     printf("%lf,",Ainverse[i][j]);
@@ -38,8 +58,19 @@ int main( int argc, char** argv )
     IMG_RGB processed_IMG_RGB(rawSize), raw_IMG_RGB(rawSize);
     cvMat2IMG_RGB(rawImage,raw_IMG_RGB);
     // twist(raw_IMG_RGB, processed_IMG_RGB, (double)90/180*PI, 250, biCubicRGB);
-    double k[3]={0.5, 0.5, 0.5};
-    distort(raw_IMG_RGB, processed_IMG_RGB, k, biCubicRGB);
+    // double k[3]={0.5, 0.5, 0.5};
+    // distort(raw_IMG_RGB, processed_IMG_RGB, k, biCubicRGB);
+
+    ControlPoints control;
+    control.source.push_back(mPoint({0,0}));
+    control.source.push_back(mPoint({101,101}));
+    control.source.push_back(mPoint({250,350}));
+    control.target.push_back(mPoint({10,10}));
+    control.target.push_back(mPoint({140,140}));
+    control.target.push_back(mPoint({400,500}));
+
+    TPSdist(raw_IMG_RGB, processed_IMG_RGB, control, biCubicRGB);
+
     IMG_RGB2cvMat(processed_IMG_RGB, processedImage);
     //IMG_RGB2cvMat(raw_IMG_RGB, processedImage);
 

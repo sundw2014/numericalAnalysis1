@@ -19,9 +19,9 @@ typedef union
 {
   struct{PointInt x,y;};
   PointInt data[2];
-}Point;
+}mPoint;
 
-typedef std::vector<Point> PointSet;
+typedef std::vector<mPoint> PointSet;
 typedef struct
 {
   PointSet source, target;
@@ -50,29 +50,39 @@ public:
 };
 
 template<class T>
-class 2DArray
+class Array2D
 {
 public:
   T **data;
   size_t size[2];
 
-  2DArray(size_t m, size_t n){
+  Array2D(size_t m, size_t n){
     size[0] = m;
     size[1] = n;
 
-    data = new T*[m];
+    data = new T* [m];
     for(size_t i=0;i<m;i++){
       data[i] = new T[n];
     }
   }
-  ~2DArray(){
-    for(size_t i=0;i<m;i++){
+  ~Array2D(){
+    for(size_t i=0;i<size[0];i++){
       delete [] data[i];
     }
     delete [] data;
   }
-  T* operator[] (size_t index){
+  T* operator[] (size_t index) const
+  {
     return data[index];
+  }
+  void print()
+  {
+    for(int i=0;i<size[0];i++){
+      for(int j=0;j<size[1];j++){
+        printf("%lf,",data[i][j]);
+      }
+      printf("\r\n");
+    }
   }
 };
 
@@ -80,6 +90,7 @@ typedef PixelRGB InterpolationMethod(const double axis[2], const IMG_RGB& rawI);
 
 void twist(const IMG_RGB& rawI, const IMG_RGB& result, const double theta, const double row, InterpolationMethod interpolation);
 void distort(const IMG_RGB& rawI, const IMG_RGB& result, const double k[3], InterpolationMethod interpolation);
+void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints control, InterpolationMethod interpolation);
 PixelRGB NearestNeighborRGB(const double axis[2], const IMG_RGB& rawI);
 PixelRGB biLinearRGB(const double axis[2], const IMG_RGB& rawI);
 PixelRGB biCubicRGB(const double axis[2], const IMG_RGB& rawI);

@@ -1,14 +1,18 @@
 #ifndef _BLAS_H
 #define _BLAS_H
 
+#include "stdlib.h"
 #include "stddef.h"
 #include "stdint.h"
 #include "assert.h"
 #include "imageprocess.h"
 
-template <class T, int M, int N, int O>
-inline void mul_MM(T A[M][N], T B[N][O], T result[M][O])
+template <class T>
+inline void mul_MM(const Array2D<T> &A, const Array2D<T> &B, Array2D<T> &result)
 {
+  assert(A.size[1] == B.size[0] && A.size[0] == result.size[0] && B.size[1] == result.size[1]);
+  size_t M = A.size[0], N = A.size[1], O = B.size[1];
+
   for(size_t i=0;i<M;i++){
     for(size_t j=0;j<O;j++){
       T tmpResult = 0;
@@ -21,50 +25,85 @@ inline void mul_MM(T A[M][N], T B[N][O], T result[M][O])
 }
 
 template <class T>
-inline void inverseSquareM(const 2DArray<T> &A, 2DArray<T> &result)
+inline void inverseSquareM(const Array2D<T> &RAW, Array2D<T> &A)
 {
-  assert(A.size[0] == A.size[1] && result.size[0] == result.size[1] && A.szie[0] == result.size[0]);
-  size_t N = A.size[0];
-  2DArray<T> tmpMatrix(N,2*N);
+  assert(RAW.size[0] == RAW.size[1] && A.size[0] == A.size[1] && RAW.size[0] == A.size[0]);
+  size_t n = RAW.size[0];
+  // Array2D<T> A(n,n);
   // memcpy(tmpMatrix, A, N*N*sizeof(T));
-  for(int i=0;i<N;i++){
-    for(int j=0;j<N;j++){
-      tmpMatrix[i][j] = A[i][j];
+  for(int i=0;i<n;i++){
+    for(int j=0;j<n;j++){
+      A[i][j] = RAW[i][j];
     }
   }
 
-  for(int i=0;i<N;i++)
+  int *is,*js,i,j,k,l;
+  double temp,fmax;
+  is=(int *)malloc(n*sizeof(int));
+  js=(int *)malloc(n*sizeof(int));
+
+  for(k=0;k<n;k++)
    {
-      for(int j=N;j<2*N;j++)
-      {
-          if(i==j-N)
-             tmpMatrix[i][j]=1;
-         else
-             tmpMatrix[i][j]=0;
-       }
-   }
-   for(int i=0;i<N;i++)
-   {
-      T t = tmpMatrix[i][i];
-      for(int j=i;j<2*N;j++){
-        tmpMatrix[i][j] = tmpMatrix[i][j]/t;
-      }
-      for(int j=0;j<N;j++)
-      {
-         if(i!=j)
-         {
-            t=tmpMatrix[j][i];
-            for(int k=0;k<2*N;k++){
-                tmpMatrix[j][k]=tmpMatrix[j][k]-t*tmpMatrix[i][k];
+      fmax=0.0;
+      for(i=k;i<n;i++)
+       for(j=k;j<n;j++)
+        { temp=fabs(A[i][j]);//找最大值
+          if(temp>fmax)
+           { fmax=temp;
+             is[k]=i;js[k]=j;
             }
-          }
+         }
+      if((fmax+1.0)==1.0)
+      {
+        free(is);free(js);
+        printf("no inv");
+        return;
       }
-   }
-   for(int i=0;i<N;i++){
-     for(int j=0;j<N;j++){
-       result[i][j] = tmpMatrix[i][j+N];
+    if((i=is[k])!=k)
+      for(j=0;j<n;j++)
+      {
+        double tmp = A[i][j];
+        A[i][j] = A[k][j];
+        A[k][j] = tmp;
+      }
+   if((j=js[k])!=k)
+     for(i=0;i<n;i++){
+       double tmp = A[i][j];
+       A[i][j] = A[i][k];
+       A[i][k] = tmp;
      }
-   }
+   A[k][k]=1.0/A[k][k];
+
+   for(j=0;j<n;j++)
+     if(j!=k)
+      A[k][j]*=A[k][k];
+   for(i=0;i<n;i++)
+      if(i!=k)
+        for(j=0;j<n;j++)
+          if(j!=k)
+            A[i][j]=A[i][j]-A[i][k]*A[k][j];
+   for(i=0;i<n;i++)
+     if(i!=k)
+      A[i][k] *= -A[k][k];
+  }
+  for(k=n-1;k>=0;k--)
+   {
+     if((j=js[k])!=k)
+        for(i=0;i<n;i++){
+          double tmp = A[j][i];
+          A[j][i] = A[k][i];
+          A[k][i] = tmp;
+        }
+     if((i=is[k])!=k)
+        for(j=0;j<n;j++)
+        {
+          double tmp = A[j][i];
+          A[j][i] = A[j][k];
+          A[j][k] = tmp;
+        }
+  }
+  free(is);
+  free(js);
 }
 
 #define PI 3.141592653589793238463
