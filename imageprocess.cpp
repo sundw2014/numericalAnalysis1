@@ -23,7 +23,15 @@ void twist(const IMG_RGB& rawI, const IMG_RGB& result, const double theta, const
         garma = y<0 ? 2*PI-garma : garma;
         alpha = garma - theta * (row-r) / row;
         double axis[2] = {offset[0]+(double)r*cos(alpha),offset[1]+(double)r*sin(alpha)};
-        result.data[p][q] = interpolation(axis, rawI);
+        if(axis[0] >= 0 && axis[1] >= 0 && axis[0] <= rawI.size[0]-1 && axis[1] <= rawI.size[1]-1){
+          result.data[p][q] = interpolation(axis, rawI);
+        }
+        else
+        {
+          result.data[p][q].data[0] = 0;
+          result.data[p][q].data[1] = 0;
+          result.data[p][q].data[2] = 0;
+        }
       }
       else
       {
@@ -58,7 +66,7 @@ void distort(const IMG_RGB& rawI, const IMG_RGB& result, const double k[3], Inte
       alpha = y<0 ? 2*PI-alpha:alpha;
       double axis[2] = {offset[0]+(double)r_distorted*cos(alpha),offset[1]+(double)r_distorted*sin(alpha)};
 
-      if(axis[0] >= 0 && axis[1] >= 0 && axis[0] < rawI.size[0] && axis[1] < rawI.size[1]){
+      if(axis[0] >= 0 && axis[1] >= 0 && axis[0] <= rawI.size[0]-1 && axis[1] <= rawI.size[1]-1){
         result.data[p][q] = interpolation(axis, rawI);
       }
       else
@@ -89,8 +97,8 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
       double dx = (double)control.target[i].x - (double)control.target[j].x, dy = (double)control.target[i].y - (double)control.target[j].y;
       //printf("control.target[%d].x=%d\r\n", i, control.target[i].x);
       double d = sqrt(dx * dx + dy * dy);
-      if(std::abs(d)<1e-20){
-        A[i][j] = 0;
+      if(std::abs(d)<1e-40){
+        A[i][j] = 0.0;
       }
       else{
         A[i][j] = d*d*log(d);
@@ -99,14 +107,14 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
     }
   }
   for(int j=0;j<N;j++){
-    A[N][j] = 1;
-    A[N+1][j] = control.target[j].x;
-    A[N+2][j] = control.target[j].y;
+    A[N][j] = 1.0;
+    A[N+1][j] = (double)control.target[j].x;
+    A[N+2][j] = (double)control.target[j].y;
   }
   for(int i=0;i<N;i++){
-    A[i][N] = 1;
-    A[i][N+1] = control.target[i].x;
-    A[i][N+2] = control.target[i].y;
+    A[i][N] = 1.0;
+    A[i][N+1] = (double)control.target[i].x;
+    A[i][N+2] = (double)control.target[i].y;
   }
   for(int i=N;i<N+3;i++){
     for(int j=N;j<N+3;j++){
@@ -141,6 +149,13 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
 
   mul_MM<double>(Ainverse, b, wx);
 
+  // Array2D<double> check(N+3,1);
+  // mul_MM<double>(A,wx,check);
+  // printf("bx=\r\n");
+  // b.print();
+  // printf("\r\ncheck=\r\n");
+  // check.print();
+
   //calculate wy
   //fill content of b
   for(int i=0;i<N;i++){
@@ -152,10 +167,47 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
 
   mul_MM<double>(Ainverse, b, wy);
 
+
   // printf("\r\nwx\r\n");
   // wx.print();
   // printf("\r\nwy\r\n");
   // wy.print();
+
+  // for(int p=0;p<control.target.size();p++){
+  //
+  //   Array2D<double> X(1,N+3),tmpResult(1,1);
+  //   double axis[2];
+  //
+  //   // fill content of X
+  //   for(int j=0;j<N;j++){
+  //     double dx = (double)control.target[p].x - (double)control.target[j].x, dy = (double)control.target[p].y - (double)control.target[j].y;
+  //     double d = sqrt(dx * dx + dy * dy);
+  //     if(std::abs(d)<1e-40){
+  //       X[0][j] = 0.0;
+  //     }
+  //     else{
+  //       X[0][j] = d*d*log(d);
+  //     }
+  //     // printf("%lf,",X[0][j]);
+  //   }
+  //   // printf("\r\n");
+  //   X[0][N] = 1.0;
+  //   X[0][N+1] = (double)control.target[p].x;
+  //   X[0][N+2] = (double)control.target[p].y;
+  //
+  //   // X.print();
+  //
+  //   //calculate dx
+  //   mul_MM<double>(X,wx,tmpResult);
+  //   axis[0] = control.target[p].x + tmpResult[0][0];
+  //   // printf("dx=%lf,",tmpResult[0][0]);
+  //   //calculate dy
+  //   mul_MM<double>(X,wy,tmpResult);
+  //   axis[1] = control.target[p].y + tmpResult[0][0];
+  //   // printf("dy=%lf,",tmpResult[0][0]);
+  //   printf("(%lf,%lf),(%d,%d)\r\n",axis[0],axis[1],control.source[p].x,control.source[p].y);
+  //   // printf("rawDx=%lf,rawDy=%lf\r\n",(double)control.source[p].x - (double)control.target[p].x, (double)control.source[p].y - (double)control.target[p].y);
+  // }
 
   // iteration over all pixels
   for(int p=0;p<rawI.size[0];p++){
@@ -167,8 +219,8 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
       for(int j=0;j<N;j++){
         double dx = (double)p - (double)control.target[j].x, dy = (double)q - (double)control.target[j].y;
         double d = sqrt(dx * dx + dy * dy);
-        if(std::abs(d)<1e-20){
-          X[0][j] = 0;
+        if(std::abs(d)<1e-40){
+          X[0][j] = 0.0;
         }
         else{
           X[0][j] = d*d*log(d);
@@ -176,9 +228,9 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
         // printf("%lf,",X[0][j]);
       }
       // printf("\r\n");
-      X[0][N] = 1;
-      X[0][N+1] = p;
-      X[0][N+2] = q;
+      X[0][N] = 1.0;
+      X[0][N+1] = (double)p;
+      X[0][N+2] = (double)q;
 
       // X.print();
 
@@ -191,7 +243,12 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
       axis[1] = q + tmpResult[0][0];
       // printf("dy=%lf\r\n",tmpResult[0][0]);
 
-      if(axis[0] >= 0 && axis[1] >= 0 && axis[0] < rawI.size[0] && axis[1] < rawI.size[1]){
+      // if(p==control.target[0].x && q==control.target[0].y){
+      //   printf("(%d,%d),(%lf,%lf)\r\n",control.source[0].x,control.source[0].y,axis[0],axis[1]);
+      //
+      //   continue;
+      // }
+      if(axis[0] >= 0 && axis[1] >= 0 && axis[0] <= rawI.size[0]-1 && axis[1] <= rawI.size[1]-1){
         result.data[p][q] = interpolation(axis, rawI);
       }
       else
@@ -210,7 +267,7 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
 PixelRGB NearestNeighborRGB(const double axis[2], const IMG_RGB& rawI)
 {
   PixelRGB result;
-  assert(axis[0] >= 0 && axis[1] >= 0 && axis[0] < rawI.size[0] && axis[1] < rawI.size[1]);
+  assert(axis[0] >= 0 && axis[1] >= 0 && axis[0] <= rawI.size[0]-1 && axis[1] <= rawI.size[1]-1);
   result = rawI.data[(size_t)round(axis[0])][(size_t)round(axis[1])];
   return result;
 }
@@ -218,7 +275,7 @@ PixelRGB NearestNeighborRGB(const double axis[2], const IMG_RGB& rawI)
 PixelRGB biLinearRGB(const double axis[2], const IMG_RGB& rawI)
 {
   PixelRGB result;
-  assert(axis[0] >= 0 && axis[1] >= 0 && axis[0] < rawI.size[0] && axis[1] < rawI.size[1]);
+  assert(axis[0] >= 0 && axis[1] >= 0 && axis[0] <= rawI.size[0]-1 && axis[1] <= rawI.size[1]-1);
 
   size_t i = floor(axis[0]), j = floor(axis[1]);
   double u = axis[0] - i;
@@ -232,7 +289,7 @@ PixelRGB biLinearRGB(const double axis[2], const IMG_RGB& rawI)
 PixelRGB biCubicRGB(const double axis[2], const IMG_RGB& rawI)
 {
   PixelRGB result;
-  assert(axis[0] >= 0 && axis[1] >= 0 && axis[0] < rawI.size[0] && axis[1] < rawI.size[1]);
+  assert(axis[0] >= 0 && axis[1] >= 0 && axis[0] <= rawI.size[0]-1 && axis[1] <= rawI.size[1]-1);
 
   PixelRGB** data = rawI.data;
 

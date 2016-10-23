@@ -39,7 +39,34 @@ int main( int argc, char** argv )
     IMG_RGB processed_IMG_RGB(rawSize), raw_IMG_RGB(rawSize);
     cvMat2IMG_RGB(rawImage,raw_IMG_RGB);
 
+    InterpolationMethod *interpolation = NearestNeighborRGB;
+
     char key;
+    cout<<"select interpolation method:\r\n0. Nearest Neighbor\r\n1. biLinear\r\n2.biCubic\r\n";
+    cin>>key;
+    switch(key)
+    {
+      case '0':
+      {
+        interpolation = NearestNeighborRGB;
+        break;
+      }
+      case '1':
+      {
+        interpolation = biLinearRGB;
+        break;
+      }
+      case '2':
+      {
+        interpolation = biCubicRGB;
+      }
+      default:
+      {
+        interpolation = NearestNeighborRGB;
+        break;
+      }
+    }
+
     cout<<"select mode:\r\n0. twist image\r\n1. distort an image\r\n2.apply TPS on an image\r\n";
     cin>>key;
     switch(key)
@@ -52,7 +79,7 @@ int main( int argc, char** argv )
         cout<<"\r\ntheta="<<theta<<"\r\n";
         int row = (int)((min(rawSize[0], rawSize[1])-1)/2);
         cout<<"row="<<row<<"\r\n";
-        twist(raw_IMG_RGB, processed_IMG_RGB, theta/180.0*PI, row, biCubicRGB);
+        twist(raw_IMG_RGB, processed_IMG_RGB, theta/180.0*PI, row, *interpolation);
         break;
       }
       case '1':
@@ -60,7 +87,7 @@ int main( int argc, char** argv )
         double k[3]={0.5, 0.5, 0.5};
         cout<<"input 3 k-parameters:(like 0.5 0.5 0.5)\r\n";
         cin>>k[0]>>k[1]>>k[2];
-        distort(raw_IMG_RGB, processed_IMG_RGB, k, biCubicRGB);
+        distort(raw_IMG_RGB, processed_IMG_RGB, k, *interpolation);
         break;
       }
       case '2':
@@ -119,7 +146,7 @@ int main( int argc, char** argv )
             break;
           }
         }
-        TPSdist(raw_IMG_RGB, processed_IMG_RGB, controlPs, biCubicRGB);
+        TPSdist(raw_IMG_RGB, processed_IMG_RGB, controlPs, *interpolation);
       }
     }
 
