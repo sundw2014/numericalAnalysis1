@@ -126,15 +126,16 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
   // printf("Ainverse\r\n");
   // Ainverse.print();
   inverseSquareM<double>(A,Ainverse);
+  printf("A\r\n");
+  A.print();
+  printf("Ainverse\r\n");
+  Ainverse.print();
+  Array2D<double> tpppl(N+3, N+3);
+  mul_MM(A, Ainverse, tpppl);
   // A.print();
-  // printf("Ainverse\r\n");
   // Ainverse.print();
-  // Array2D<double> tpppl(N+3, N+3);
-  // mul_MM(A, Ainverse, tpppl);
-  // A.print();
-  // Ainverse.print();
-  // printf("mul\r\n");
-  // tpppl.print();
+  printf("mul\r\n");
+  tpppl.print();
 
   Array2D<double> wx(N+3,1), wy(N+3,1);
 
