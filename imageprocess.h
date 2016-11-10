@@ -44,7 +44,6 @@ public:
     for(int i=0;i<size[0];i++){
       delete [] data[i];
     }
-    // printf("fuck\r\n");
     delete [] data;
   }
 };

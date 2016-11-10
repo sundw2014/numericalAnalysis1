@@ -30,10 +30,10 @@ CPPOBJ = $(CPPSRC:.cpp=.o)
 $(TARGET) : $(COBJ) $(CPPOBJ)
 	$(CXX) -o $(TARGET) $(COBJ) $(CPPOBJ) $(LDFLAGS)
 
-$(COBJ) : %.o : %.cpp
+$(COBJ) : %.o : %.c $(INC)
 	$(CC) -c $< -o $@ $(CFLAGS)
 
-$(CPPOBJ) : %.o : %.cpp
+$(CPPOBJ) : %.o : %.cpp $(INC)
 	$(CXX) -c $< -o $@ $(CFLAGS)
 
 .PHONY:clean

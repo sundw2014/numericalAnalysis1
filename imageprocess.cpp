@@ -95,7 +95,6 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
   for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       double dx = (double)control.target[i].x - (double)control.target[j].x, dy = (double)control.target[i].y - (double)control.target[j].y;
-      //printf("control.target[%d].x=%d\r\n", i, control.target[i].x);
       double d = sqrt(dx * dx + dy * dy);
       if(std::abs(d)<1e-40){
         A[i][j] = 0.0;
@@ -103,7 +102,6 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
       else{
         A[i][j] = d*d*log(d);
       }
-      // printf("%lf,%lf\r\n",log(d),A[i][j]);
     }
   }
   for(int j=0;j<N;j++){
@@ -121,21 +119,9 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
       A[i][j] = 0.0;
     }
   }
-  // printf("A\r\n");
-  // A.print();
-  // printf("Ainverse\r\n");
-  // Ainverse.print();
   inverseSquareM<double>(A,Ainverse);
-  printf("A\r\n");
-  A.print();
-  printf("Ainverse\r\n");
-  Ainverse.print();
   Array2D<double> tpppl(N+3, N+3);
   mul_MM(A, Ainverse, tpppl);
-  // A.print();
-  // Ainverse.print();
-  printf("mul\r\n");
-  tpppl.print();
 
   Array2D<double> wx(N+3,1), wy(N+3,1);
 
@@ -145,17 +131,8 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
     b[i][0] = (double)control.source[i].x - (double)control.target[i].x;
   }
   b[N][0] = b[N+1][0] = b[N+2][0] = 0.0;
-  // printf("\r\nbx\r\n");
-  // b.print();
 
   mul_MM<double>(Ainverse, b, wx);
-
-  // Array2D<double> check(N+3,1);
-  // mul_MM<double>(A,wx,check);
-  // printf("bx=\r\n");
-  // b.print();
-  // printf("\r\ncheck=\r\n");
-  // check.print();
 
   //calculate wy
   //fill content of b
@@ -163,52 +140,8 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
     b[i][0] = (double)control.source[i].y - (double)control.target[i].y;
   }
   b[N][0] = b[N+1][0] = b[N+2][0] = 0.0;
-  // printf("\r\nbr\n");
-  // b.print();
 
   mul_MM<double>(Ainverse, b, wy);
-
-
-  // printf("\r\nwx\r\n");
-  // wx.print();
-  // printf("\r\nwy\r\n");
-  // wy.print();
-
-  // for(int p=0;p<control.target.size();p++){
-  //
-  //   Array2D<double> X(1,N+3),tmpResult(1,1);
-  //   double axis[2];
-  //
-  //   // fill content of X
-  //   for(int j=0;j<N;j++){
-  //     double dx = (double)control.target[p].x - (double)control.target[j].x, dy = (double)control.target[p].y - (double)control.target[j].y;
-  //     double d = sqrt(dx * dx + dy * dy);
-  //     if(std::abs(d)<1e-40){
-  //       X[0][j] = 0.0;
-  //     }
-  //     else{
-  //       X[0][j] = d*d*log(d);
-  //     }
-  //     // printf("%lf,",X[0][j]);
-  //   }
-  //   // printf("\r\n");
-  //   X[0][N] = 1.0;
-  //   X[0][N+1] = (double)control.target[p].x;
-  //   X[0][N+2] = (double)control.target[p].y;
-  //
-  //   // X.print();
-  //
-  //   //calculate dx
-  //   mul_MM<double>(X,wx,tmpResult);
-  //   axis[0] = control.target[p].x + tmpResult[0][0];
-  //   // printf("dx=%lf,",tmpResult[0][0]);
-  //   //calculate dy
-  //   mul_MM<double>(X,wy,tmpResult);
-  //   axis[1] = control.target[p].y + tmpResult[0][0];
-  //   // printf("dy=%lf,",tmpResult[0][0]);
-  //   printf("(%lf,%lf),(%d,%d)\r\n",axis[0],axis[1],control.source[p].x,control.source[p].y);
-  //   // printf("rawDx=%lf,rawDy=%lf\r\n",(double)control.source[p].x - (double)control.target[p].x, (double)control.source[p].y - (double)control.target[p].y);
-  // }
 
   // iteration over all pixels
   for(int p=0;p<rawI.size[0];p++){
@@ -226,29 +159,19 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
         else{
           X[0][j] = d*d*log(d);
         }
-        // printf("%lf,",X[0][j]);
       }
-      // printf("\r\n");
       X[0][N] = 1.0;
       X[0][N+1] = (double)p;
       X[0][N+2] = (double)q;
 
-      // X.print();
-
       //calculate dx
       mul_MM<double>(X,wx,tmpResult);
       axis[0] = p + tmpResult[0][0];
-      // printf("dx=%lf,",tmpResult[0][0]);
+
       //calculate dy
       mul_MM<double>(X,wy,tmpResult);
       axis[1] = q + tmpResult[0][0];
-      // printf("dy=%lf\r\n",tmpResult[0][0]);
 
-      // if(p==control.target[0].x && q==control.target[0].y){
-      //   printf("(%d,%d),(%lf,%lf)\r\n",control.source[0].x,control.source[0].y,axis[0],axis[1]);
-      //
-      //   continue;
-      // }
       if(axis[0] >= 0 && axis[1] >= 0 && axis[0] <= rawI.size[0]-1 && axis[1] <= rawI.size[1]-1){
         result.data[p][q] = interpolation(axis, rawI);
       }
@@ -317,7 +240,6 @@ PixelRGB biCubicRGB(const double axis[2], const IMG_RGB& rawI)
     mul_MM<double>(A,B,AB);
     mul_MM<double>(AB,CT,tmpResult);
     result.data[c] = (int)tmpResult[0][0];
-    // result.data[c] = data[i][j].data[c];
   }
   return result;
 }
@@ -337,5 +259,5 @@ inline double biCubicKernel(const double x, const double a)
 }
 
 /*
-* end of some interpolation methosd
+* end of some interpolation methods
 */

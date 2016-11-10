@@ -29,8 +29,6 @@ inline void inverseSquareM(const Array2D<T> &RAW, Array2D<T> &A)
 {
   assert(RAW.size[0] == RAW.size[1] && A.size[0] == A.size[1] && RAW.size[0] == A.size[0]);
   size_t n = RAW.size[0];
-  // Array2D<T> A(n,n);
-  // memcpy(tmpMatrix, A, N*N*sizeof(T));
   for(int i=0;i<n;i++){
     for(int j=0;j<n;j++){
       A[i][j] = RAW[i][j];
