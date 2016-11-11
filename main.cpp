@@ -42,7 +42,7 @@ int main( int argc, char** argv )
     InterpolationMethod *interpolation = NearestNeighborRGB;
 
     char key;
-    cout<<"select interpolation method:\r\n0. Nearest Neighbor\r\n1. biLinear\r\n2.biCubic\r\n";
+    cout<<"select interpolation method:\r\n0. Nearest Neighbor\r\n1. biLinear\r\n2. biCubic\r\n";
     cin>>key;
     switch(key)
     {
@@ -59,6 +59,7 @@ int main( int argc, char** argv )
       case '2':
       {
         interpolation = biCubicRGB;
+        break;
       }
       default:
       {
@@ -67,7 +68,7 @@ int main( int argc, char** argv )
       }
     }
 
-    cout<<"select mode:\r\n0. twist image\r\n1. distort an image\r\n2.apply TPS on an image\r\n";
+    cout<<"select mode:\r\n0. twist image\r\n1. distort an image\r\n2. apply TPS on an image\r\n";
     cin>>key;
     switch(key)
     {

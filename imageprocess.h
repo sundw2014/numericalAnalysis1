@@ -6,6 +6,13 @@
 #include "stdio.h"
 #include <vector>
 
+#define MAX_UCHAR 255
+
+template<class T>
+inline int saturateCastUchar(T x) {
+  return (x > MAX_UCHAR ? MAX_UCHAR : (x < 0 ? 0 : x));
+}
+
 typedef uint8_t PixelInt;
 typedef size_t PointInt;
 
@@ -93,6 +100,6 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
 PixelRGB NearestNeighborRGB(const double axis[2], const IMG_RGB& rawI);
 PixelRGB biLinearRGB(const double axis[2], const IMG_RGB& rawI);
 PixelRGB biCubicRGB(const double axis[2], const IMG_RGB& rawI);
-inline double biCubicKernel(const double x, const double a = -0.6);
+inline double biCubicKernel(const double x, const double a = -1.0);
 
 #endif

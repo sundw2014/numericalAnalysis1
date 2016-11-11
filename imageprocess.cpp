@@ -205,7 +205,10 @@ PixelRGB biLinearRGB(const double axis[2], const IMG_RGB& rawI)
   double u = axis[0] - i;
   double v = axis[1] - j;
   for(int c=0;c<3;c++){
-    result.data[c] = ((1-u) * rawI.data[i][j].data[c] + u * rawI.data[i+1][j].data[c])*(1-v)+((1-u) * rawI.data[i][j+1].data[c] + u * rawI.data[i+1][j+1].data[c])*v;
+    result.data[c] = saturateCastUchar(((1-u) * rawI.data[i][j].data[c]\
+     + u * rawI.data[i+1][j].data[c])*(1-v)\
+     + ((1-u) * rawI.data[i][j+1].data[c]\
+     + u * rawI.data[i+1][j+1].data[c])*v);
   }
   return result;
 }
@@ -239,7 +242,7 @@ PixelRGB biCubicRGB(const double axis[2], const IMG_RGB& rawI)
     Array2D<double> tmpResult(1,1);
     mul_MM<double>(A,B,AB);
     mul_MM<double>(AB,CT,tmpResult);
-    result.data[c] = (int)tmpResult[0][0];
+    result.data[c] = saturateCastUchar(tmpResult[0][0]);
   }
   return result;
 }
