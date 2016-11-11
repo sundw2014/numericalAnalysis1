@@ -1,5 +1,5 @@
 #include "cvutilities.h"
-
+// 一些opencv相关的小工具
 using namespace cv;
 using namespace std;
 

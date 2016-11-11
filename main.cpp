@@ -36,9 +36,11 @@ int main( int argc, char** argv )
 
     Mat processedImage(rawSize[0], rawSize[1], rawImage.type());
 
+    // 转换为自己定义的图像数据类型
     IMG_RGB processed_IMG_RGB(rawSize), raw_IMG_RGB(rawSize);
     cvMat2IMG_RGB(rawImage,raw_IMG_RGB);
 
+    // 默认插值方法是最近邻
     InterpolationMethod *interpolation = NearestNeighborRGB;
 
     char key;
@@ -116,7 +118,7 @@ int main( int argc, char** argv )
           char TPSKey = waitKey(10);                                          // Wait for a keystroke in the window
           switch(TPSKey)
           {
-            case 'd':
+            case 'd': //按下'd'后删除一个点
               switch(TPSstate){
                 case 0://去除一个target
                   if(controlPs.target.size()>0){
@@ -166,7 +168,7 @@ void onMouse(int event, int x, int y, int flags, void* param)
     Mat *im = reinterpret_cast<Mat*>(param);
     switch (event)
     {
-        case CV_EVENT_LBUTTONDOWN:     //鼠标左键按下响应：返回坐标和灰度
+        case CV_EVENT_LBUTTONDOWN:     //鼠标左键按下响应
             switch(TPSstate){
               case 0://添加source
                 controlPs.source.push_back(mPoint({x,y}));

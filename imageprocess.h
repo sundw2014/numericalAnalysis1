@@ -8,11 +8,13 @@
 
 #define MAX_UCHAR 255
 
+// cast 函数， 模仿OpenCV
 template<class T>
 inline int saturateCastUchar(T x) {
   return (x > MAX_UCHAR ? MAX_UCHAR : (x < 0 ? 0 : x));
 }
 
+// 下面是自己定义的一些数据类型
 typedef uint8_t PixelInt;
 typedef size_t PointInt;
 
@@ -92,6 +94,7 @@ public:
   }
 };
 
+// 插值函数指针类型
 typedef PixelRGB InterpolationMethod(const double axis[2], const IMG_RGB& rawI);
 
 void twist(const IMG_RGB& rawI, const IMG_RGB& result, const double theta, const double row, InterpolationMethod interpolation);

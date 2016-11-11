@@ -3,6 +3,8 @@
 #include "imageprocess.h"
 #include "blas.h"
 
+// 实现了所有的变换和插值函数
+
 /*
 * twist an image
 */
@@ -86,16 +88,22 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
 {
   assert(rawI.size[0] == result.size[0] && rawI.size[1] == result.size[1] && rawI.size[0]>1 && rawI.size[1]>1);
   assert(control.target.size() == control.source.size());
+  if(control.target.size() < 3){
+      printf("please choose 3 couples of control points at least.");
+      exit(1);
+  }
 
   const size_t N = control.target.size();
 
+  // 解方程Aw=b
   Array2D<double> A(N+3,N+3), Ainverse(N+3,N+3), b(N+3,1);
 
-  // fill content of A
+  // 填充矩阵A
   for(int i=0;i<N;i++){
     for(int j=0;j<N;j++){
       double dx = (double)control.target[i].x - (double)control.target[j].x, dy = (double)control.target[i].y - (double)control.target[j].y;
       double d = sqrt(dx * dx + dy * dy);
+      // 防止NaN
       if(std::abs(d)<1e-40){
         A[i][j] = 0.0;
       }
@@ -104,6 +112,7 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
       }
     }
   }
+  // 填充A的剩余部分
   for(int j=0;j<N;j++){
     A[N][j] = 1.0;
     A[N+1][j] = (double)control.target[j].x;
@@ -119,23 +128,23 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
       A[i][j] = 0.0;
     }
   }
+  // 求逆
   inverseSquareM<double>(A,Ainverse);
-  Array2D<double> tpppl(N+3, N+3);
-  mul_MM(A, Ainverse, tpppl);
 
   Array2D<double> wx(N+3,1), wy(N+3,1);
 
-  //calculate wx
-  //fill content of b
+  // calculate wx, wx是X坐标做样条插值的权重
+  // 填充b，这个b矩阵对应的是X坐标
   for(int i=0;i<N;i++){
     b[i][0] = (double)control.source[i].x - (double)control.target[i].x;
   }
   b[N][0] = b[N+1][0] = b[N+2][0] = 0.0;
 
+  // wx=A^(-1)*b
   mul_MM<double>(Ainverse, b, wx);
 
-  //calculate wy
-  //fill content of b
+  // 计算y坐标
+  // 其他同上
   for(int i=0;i<N;i++){
     b[i][0] = (double)control.source[i].y - (double)control.target[i].y;
   }
@@ -149,7 +158,7 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
       Array2D<double> X(1,N+3),tmpResult(1,1);
       double axis[2];
 
-      // fill content of X
+      // 填充X，X是当前坐标算出来的与control points的差
       for(int j=0;j<N;j++){
         double dx = (double)p - (double)control.target[j].x, dy = (double)q - (double)control.target[j].y;
         double d = sqrt(dx * dx + dy * dy);
@@ -164,7 +173,7 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
       X[0][N+1] = (double)p;
       X[0][N+2] = (double)q;
 
-      //calculate dx
+      //calculate dx， 然后x坐标就等于当前整数坐标加上dx
       mul_MM<double>(X,wx,tmpResult);
       axis[0] = p + tmpResult[0][0];
 
@@ -175,7 +184,7 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
       if(axis[0] >= 0 && axis[1] >= 0 && axis[0] <= rawI.size[0]-1 && axis[1] <= rawI.size[1]-1){
         result.data[p][q] = interpolation(axis, rawI);
       }
-      else
+      else // 超过边缘限制的就不插值了，直接黑掉
       {
         result.data[p][q].data[0] = 0;
         result.data[p][q].data[1] = 0;
@@ -242,6 +251,7 @@ PixelRGB biCubicRGB(const double axis[2], const IMG_RGB& rawI)
     Array2D<double> tmpResult(1,1);
     mul_MM<double>(A,B,AB);
     mul_MM<double>(AB,CT,tmpResult);
+    // cast一下是为了防止下溢出和上溢出
     result.data[c] = saturateCastUchar(tmpResult[0][0]);
   }
   return result;

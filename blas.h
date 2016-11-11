@@ -1,6 +1,7 @@
 #ifndef _BLAS_H
 #define _BLAS_H
 
+// 实现了矩阵乘法和求逆
 #include "stdlib.h"
 #include "stddef.h"
 #include "stdint.h"
@@ -24,6 +25,7 @@ inline void mul_MM(const Array2D<T> &A, const Array2D<T> &B, Array2D<T> &result)
   }
 }
 
+// 这个求逆函数来自网络，精度比较差
 template <class T>
 inline void inverseSquareM(const Array2D<T> &RAW, Array2D<T> &A)
 {
