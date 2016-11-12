@@ -31,7 +31,7 @@ void IMG_RGB2cvMat(const IMG_RGB& i, Mat& m){
 
   for(int p=0;p<i.size[0];p++){
     for(int q=0;q<i.size[1];q++){
-      m.at<Vec3b>(q,p) = Vec3b(i.data[p][q].data[0], i.data[p][q].data[1], i.data[p][q].data[2]);
+      m.at<Vec3b>(p,q) = Vec3b(i.data[p][q].data[0], i.data[p][q].data[1], i.data[p][q].data[2]);
     }
   }
 }
@@ -43,7 +43,7 @@ void cvMat2IMG_RGB(const Mat& m, IMG_RGB& i)
   for(int p=0;p<i.size[0];p++){
     for(int q=0;q<i.size[1];q++){
       for(int c=0;c<3;c++){
-        i.data[p][q].data[c] = m.at<Vec3b>(q,p).val[c];
+        i.data[p][q].data[c] = m.at<Vec3b>(p,q).val[c];
       }
     }
   }

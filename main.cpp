@@ -103,14 +103,14 @@ int main( int argc, char** argv )
           Mat TPSSelectingImage = rawImage.clone();
 
           for(int i=0;i<min(controlPs.target.size(), controlPs.source.size());i++){
-            circle( TPSSelectingImage, Point( controlPs.source[i].x, controlPs.source[i].y ), 3.0, Scalar( 0, 0, 255 ), 1, 8 );
-            circle( TPSSelectingImage, Point( controlPs.target[i].x, controlPs.target[i].y ), 3.0, Scalar( 0, 0, 255 ), 1, 8 );
-            line(TPSSelectingImage, Point( controlPs.source[i].x, controlPs.source[i].y ), Point( controlPs.target[i].x, controlPs.target[i].y), Scalar( 110, 220, 0 ),  2, 8 );
+            circle( TPSSelectingImage, Point( controlPs.source[i].y, controlPs.source[i].x ), 3.0, Scalar( 0, 0, 255 ), 1, 8 );
+            circle( TPSSelectingImage, Point( controlPs.target[i].y, controlPs.target[i].x ), 3.0, Scalar( 0, 0, 255 ), 1, 8 );
+            line(TPSSelectingImage, Point( controlPs.source[i].y, controlPs.source[i].x ), Point( controlPs.target[i].y, controlPs.target[i].x), Scalar( 110, 220, 0 ),  2, 8 );
           }
           if(controlPs.source.size()>controlPs.target.size())
           {
             int i = controlPs.source.size()-1;
-            circle( TPSSelectingImage, Point( controlPs.source[i].x, controlPs.source[i].y ), 3.0, Scalar( 0, 0, 255 ), 1, 8 );
+            circle( TPSSelectingImage, Point( controlPs.source[i].y, controlPs.source[i].x ), 3.0, Scalar( 0, 0, 255 ), 1, 8 );
           }
 
           imshow( "raw image Display window", TPSSelectingImage );                   // Show our image inside it.
@@ -171,11 +171,12 @@ void onMouse(int event, int x, int y, int flags, void* param)
         case CV_EVENT_LBUTTONDOWN:     //鼠标左键按下响应
             switch(TPSstate){
               case 0://添加source
-                controlPs.source.push_back(mPoint({x,y}));
+                // 这里x和y分别是列与行号，所一存储的时候换一下
+                controlPs.source.push_back(mPoint({y,x}));
                 TPSstate = 1;
                 break;
               case 1://添加target
-                controlPs.target.push_back(mPoint({x,y}));
+                controlPs.target.push_back(mPoint({y,x}));
                 TPSstate = 0;
                 break;
             }

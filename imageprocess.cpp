@@ -89,7 +89,7 @@ void TPSdist(const IMG_RGB& rawI, const IMG_RGB& result, const ControlPoints con
   assert(rawI.size[0] == result.size[0] && rawI.size[1] == result.size[1] && rawI.size[0]>1 && rawI.size[1]>1);
   assert(control.target.size() == control.source.size());
   if(control.target.size() < 3){
-      printf("please choose 3 couples of control points at least.");
+      printf("please choose 3 couples of control points at least.\r\n");
       exit(1);
   }
 
