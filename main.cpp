@@ -123,14 +123,14 @@ int main( int argc, char** argv )
                 case 0://去除一个target
                   if(controlPs.target.size()>0){
                     controlPs.target.pop_back();
+                    TPSstate = 1;
                   }
-                  TPSstate = 1;
                   break;
                 case 1://去除一个source
                   if(controlPs.source.size()>0){
                     controlPs.source.pop_back();
+                    TPSstate = 0;
                   }
-                  TPSstate = 0;
                   break;
               }
               break;
